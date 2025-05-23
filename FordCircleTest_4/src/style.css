@@ -1,0 +1,107 @@
+@font-face {
+  font-family: "Chivo";
+  src: url("/ChivoMono-Light.ttf");
+}
+
+body{
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+canvas{
+  z-index: -1;
+  position: absolute;
+  top: 20px; 
+  left: 20px;
+}
+
+.container{
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px;
+}
+
+.inscriptions{
+  display: flex;
+  position: absolute;
+  width: 100vw;
+  top:3px;
+  left: 20px
+}
+
+p{
+font-family: Chivo;
+height: 10px;
+margin: 0;
+margin-right: 20px;
+font-size: 10pt;
+}
+
+.gradient{
+  z-index: -2;
+  position: absolute;
+  top:20px;
+  left: 20px;
+  width: calc(100vw - 40px);
+  height: calc(100vh - 40px);
+
+  background: linear-gradient(to bottom,
+        #121222 0%,
+        #0E2634 20%,
+        #183845 25%,
+        #445561 31%,
+        #8B7D7D 38%,
+        #FFD786 50%,
+        #FF6536 51%,
+        #121222 53%,
+        #08080F 55%,
+        #211C22 56%,
+        #4E2827 57%,
+        #FF322C 58%,
+        #FFF7D3 59%,
+        #FF7C00 60%,
+        #FFF7D3 61%,
+        #FC8310 63%,
+        #744746 64%,
+        #4E2827 65%,
+        #211C22 66%,
+        #000000 67%,
+        #211C22 68%,
+        #000000 69%,
+        #4E2827 71%,
+        #6F3F3E 72%,
+        #4E2827 73%,
+        #FF9000 74%,
+        #6F3F3E 75%,
+        #FF322C 76%,
+        #4E2827 77%,
+        #6F3F3E 79%,
+        #000000 80%,
+        #954F2B 81%,
+        #6F311C 82%,
+        #120805 84%,
+        #39190F 85%,
+        #28120A 86%,
+        #120805 87%,
+        #28120A 88%,
+        #39190F 89%,
+        #000000 90%,
+        #28120A 91%,
+        #000000 92%,
+        #28120A 93%,
+        #28120A 94%,
+        #39190F 95%,
+        #000000 96%,
+        #28120A 97%,
+        #000000 98%,
+        #000000 100%);
+    filter: saturate(1.2) brightness(1.2);
+}
+
+.dg{
+  z-index: 10;
+}
