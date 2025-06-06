@@ -4,6 +4,7 @@ import Utils from "./utils.js";
 import Vector from "./Vector.js";
 import * as Tone from "tone";
 import Noeud from "./Noeud.js";
+import Gradient from "./Gradient.js";
 
 const canvas = document.createElement("canvas");
 const container = document.querySelector(".container");
@@ -11,14 +12,13 @@ console.log(container);
 document.body.appendChild(canvas);
 const ctx = canvas.getContext("2d");
 
-const gravityText = document.querySelector(".gravity");
-
 let width;
 let height;
 let mouseX = 0;
 let mouseY = 0;
 
 let Util = new Utils();
+let gradient = new Gradient();
 
 let circles = [];
 let activeCircles = [];
@@ -38,7 +38,12 @@ let showHandle = false;
 let baseRadius = 300;
 
 let collisionLinesAmount = 0;
-let ambiantChordsNotes = ["F1", "A1", "D2", "F2"];
+const ambiantChordsByPitch = [
+  ["C2", "E2", "G2"], // très grave (nuit)
+  ["C3", "E3", "G3"],
+  ["C4", "E4", "G4"], // neutre
+  ["C5", "E5", "G5"], // plus aigu (jour)
+];
 let isMakingCollisionLine = false;
 
 //--------------- HANDLE ----------------
@@ -68,7 +73,7 @@ const limiter = new Tone.Limiter(-6).toDestination();
 const masterVolume = new Tone.Volume(0).connect(limiter); // Volume global
 
 const compressor = new Tone.Compressor({
-  threshold: -30,
+  threshold: -60,
   ratio: 6,
   attack: 0.01,
   release: 0.2,
@@ -82,14 +87,16 @@ reverb.generate();
 let sampler;
 let sampler2;
 let ambiantSampler;
+let effectSampler;
+let bassSampler;
 
 window.addEventListener("DOMContentLoaded", async () => {
   sampler = new Tone.Sampler({
     urls: {
-      C1: "Main_C1.mp3",
-      F1: "Main_F1.mp3",
-      A1: "Main_A1.mp3",
-      C2: "Main_C2.mp3",
+      C1: "C1.mp3",
+      F1: "F1.mp3",
+      A1: "A1.mp3",
+      C2: "C2.mp3",
     },
     baseUrl: "Sounds/",
     onload: () => console.log("Samples chargés 🎧"),
@@ -121,15 +128,39 @@ window.addEventListener("DOMContentLoaded", async () => {
     baseUrl: "Sounds/",
     onload: () => {
       console.log("Samples chargés 🎧");
-      // Lance la boucle d'ambiance après chargement
-      Tone.Transport.scheduleRepeat((time) => {
-        ambiantSampler.triggerAttackRelease("D1", "8m", time);
-      }, "4m"); // toutes les 2 mesures (ajuste selon ton tempo)
-      Tone.Transport.start();
     },
   }).connect(reverb);
 
-  ambiantSampler.volume.value = -34;
+  ambiantSampler.volume.value = -50;
+
+  effectSampler = new Tone.Sampler({
+    urls: {
+      C1: "sfx1_C1.mp3",
+      E1: "sfx1_E1.mp3",
+      G1: "sfx1_G1.mp3",
+      B1: "sfx1_B1.mp3",
+    },
+    baseUrl: "Sounds/",
+    onload: () => {
+      console.log("Samples chargés 🎧");
+    },
+  }).connect(reverb);
+  effectSampler.volume.value = -24;
+
+  bassSampler = new Tone.Sampler({
+    urls: {
+      C1: "Bass4_C1.mp3",
+      E1: "Bass4_E1.mp3",
+      G1: "Bass4_G1.mp3",
+      C2: "Bass4_C2.mp3",
+    },
+    baseUrl: "Sounds/",
+    onload: () => {
+      console.log("Samples chargés 🎧");
+    },
+  }).connect(reverb);
+
+  bassSampler.volume.value = -16;
 });
 
 //------------GlobalForces---------------------------
@@ -158,6 +189,9 @@ resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
 window.addEventListener("mousedown", (event) => {
+  if (event.target.classList.contains("inscriptions")) {
+    return; // Ignore clicks on the GUI
+  }
   if (!isDragging) {
     const { x, y } = getMousePosInCanvas(event);
 
@@ -209,8 +243,26 @@ if (guiContainer) {
 
 // Gestionnaire de clics sur le canvas
 canvas.addEventListener("mousedown", (e) => {
-  // Logique pour ajouter des cercles ou interagir avec le canvas
-  console.log("Clic sur le canvas :", e.clientX, e.clientY);
+  if (!isHoveringNoeud) {
+    // Logique pour ajouter des cercles ou interagir avec le canvas
+    console.log("Clic sur le canvas :", e.clientX, e.clientY);
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Recherche d’un handle cliqué
+    for (let i = collisionLines.length - 1; i >= 0; i--) {
+      if (collisionLines[i].isMouseNearLine(mouseX, mouseY)) {
+        collisionLines[i].destroy();
+        collisionLines[i].playSound(effectSampler);
+        setTimeout(() => {
+          collisionLines.splice(i, 1); // Supprime le handle
+        }, 400);
+        console.log("Handle supprimé");
+        break;
+      }
+    }
+  }
 });
 
 //---------------- GET MOUSE ------------
@@ -245,6 +297,13 @@ function GetMouse(mX, mY) {
 function fordCircles(limit) {
   baseRadius =
     Util.distance(startPoint[0], startPoint[1], endPoint[0], endPoint[1]) / 2; // Ajuste le rayon de base pour qu'il fasse la moitié de la distance de l'axe
+  const baseLength = Util.distance(
+    startPoint[0],
+    startPoint[1],
+    endPoint[0],
+    endPoint[1]
+  );
+  if (baseLength < 50) return; // Par exemple, 50px minimum
   const normal = Util.normal(
     startPoint[0],
     startPoint[1],
@@ -271,7 +330,8 @@ function fordCircles(limit) {
           sampler,
           compressor,
           masterVolume,
-          sampler2
+          sampler2,
+          bassSampler
         );
 
         circles.push(newCircle);
@@ -364,22 +424,57 @@ function lockCollisionHandle() {
   isMakingCollisionLine = false;
 
   collisionLinesAmount++;
-  if (collisionLinesAmount >= 2) {
-    // On arrête les anciennes boucles pour éviter les superpositions
-    Tone.Transport.cancel();
+}
 
-    Tone.Transport.scheduleRepeat((time) => {
-      // On joue un accord avec autant de notes que collisionLinesAmount (max la longueur du tableau)
-      const notes = ambiantChordsNotes.slice(
-        0,
-        Math.min(collisionLinesAmount, ambiantChordsNotes.length)
-      );
-      notes.forEach((note) => {
-        ambiantSampler.triggerAttackRelease(note, "8m", time);
-      });
-    }, "4m"); // toutes les 4 mesures (ajuste selon ton tempo)
-    Tone.Transport.start();
+function getChordByRatio(ratio) {
+  const nightChords = [
+    ["Am", ["A2", "C3", "E3"]],
+    ["Em", ["E2", "G2", "B2"]],
+    ["Dm", ["D2", "F2", "A2"]],
+    ["Cm", ["C2", "Eb2", "G2"]],
+  ];
+
+  const dayChords = [
+    ["C", ["C3", "E3", "G3"]],
+    ["F", ["F2", "A2", "C3"]],
+    ["G", ["G2", "B2", "D3"]],
+    ["D", ["D3", "F#3", "A3"]],
+  ];
+
+  const transitionChords = [
+    ["Csus2", ["C3", "D3", "G3"]],
+    ["E5", ["E2", "B2", "E3"]],
+    ["Asus4", ["A2", "D3", "E3"]],
+    ["G6", ["G2", "B2", "E3"]],
+  ];
+
+  const clampedRatio = Math.max(0, Math.min(1, ratio));
+
+  if (clampedRatio < 0.33) {
+    const random = Math.floor(Math.random() * nightChords.length);
+    return nightChords[random][1];
+  } else if (clampedRatio > 0.66) {
+    const random = Math.floor(Math.random() * dayChords.length);
+    return dayChords[random][1];
+  } else {
+    const random = Math.floor(Math.random() * transitionChords.length);
+    return transitionChords[random][1];
   }
+}
+
+function scheduleDynamicChord(gradientInstance) {
+  Tone.Transport.cancel();
+  Tone.Transport.scheduleRepeat((time) => {
+    const currentRatio = gradientInstance.ratio;
+    console.log("Current Ratio:", currentRatio);
+    const chord = getChordByRatio(currentRatio);
+
+    chord.forEach((note) => {
+      ambiantSampler.triggerAttackRelease(note, "2m", time);
+    });
+  }, "3m");
+
+  Tone.Transport.start();
 }
 
 //NOEUDS ----------------
@@ -435,6 +530,12 @@ function draw() {
 
   if (showHandle) {
     handle.draw();
+  }
+
+  gradient.updateGradient();
+
+  if (collisionLinesAmount >= 1) {
+    scheduleDynamicChord(gradient); // gradientInstance doit être accessible ici
   }
 
   requestAnimationFrame(draw);
@@ -494,6 +595,18 @@ function activeCirclesBehavior(deltaTime) {
 }
 
 function collisionLinesBehavior() {
+  for (let i = collisionLines.length - 1; i >= 0; i--) {
+    if (
+      collisionLines[i].isMouseNearLine(mouseX, mouseY) &&
+      !isHoveringNoeud &&
+      collisionLines[i].isDestroyed === false
+    ) {
+      collisionLines[i].isBeingHovered = true;
+    } else {
+      collisionLines[i].isBeingHovered = false;
+    }
+  }
+
   if (newCollisionLine) {
     newCollisionLine.draw();
     newCollisionLine.updatePosition();
@@ -504,11 +617,7 @@ function collisionLinesBehavior() {
   });
 }
 
-function updateTexts() {
-  let roundedGravX = gravityForce.x.toFixed(1);
-  let roundedGravY = gravityForce.y.toFixed(1);
-  gravityText.innerHTML = `Gravity/ ${roundedGravX}:${roundedGravY} `;
-}
+function updateTexts() {}
 
 //GUI --------------------------------
 

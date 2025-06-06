@@ -3,7 +3,17 @@ import Vector from "/src/Vector.js";
 import * as Tone from "tone";
 
 export default class Circle {
-  constructor(ctx, x, y, r, sampler, compressor, masterVolume, sampler2) {
+  constructor(
+    ctx,
+    x,
+    y,
+    r,
+    sampler,
+    compressor,
+    masterVolume,
+    sampler2,
+    bassSampler
+  ) {
     this.ctx = ctx;
     this.posX = x;
     this.posY = y;
@@ -23,6 +33,7 @@ export default class Circle {
 
     this.sampler = sampler;
     this.sampler2 = sampler2;
+    this.bassSampler = bassSampler;
 
     this.strokeColor = ["#000000"];
     this.colors = [
@@ -41,6 +52,40 @@ export default class Circle {
     this.strokeGradient = null;
     this.isExploding = false;
 
+    this.chordTemplates = [
+      ["C", "E", "G", "B", "F#"], // Cmaj7(#11)
+      ["D", "F#", "A", "C", "E"], // D7(9,13)
+      ["E", "G", "B", "D", "A"], // Em11
+      ["F#", "A", "C", "E", "B"], // F#m7b5(add13)
+      ["G", "B", "D", "F#", "A"], // Gmaj9
+      ["A", "C", "E", "G", "D"], // Am11
+      ["B", "D", "F#", "A", "E"], // Bm7(add11,13)
+
+      // F Lydien : F G A B C D E
+      ["F", "A", "C", "E", "B"], // Fmaj7(#11)
+      ["G", "B", "D", "F", "A"], // Gm9
+      ["A", "C", "E", "G", "D"], // Am11
+      ["B", "D", "F", "A", "E"], // Bm7b5(add13)
+      ["C", "E", "G", "B", "D"], // Cmaj9
+      ["D", "F", "A", "C", "G"], // Dm11
+      ["E", "G", "B", "D", "A"], // Em11
+
+      // G Lydien : G A B C# D E F#
+      ["G", "B", "D", "F#", "C#"], // Gmaj7(#11,13)
+      ["A", "C#", "E", "G", "D"], // A7(13)
+      ["B", "D", "F#", "A", "E"], // Bm9
+      ["C#", "E", "G", "B", "F#"], // C#m7b5(add13)
+      ["D", "F#", "A", "C#", "E"], // Dmaj9
+      ["E", "G", "B", "D", "A"], // Em11
+      ["F#", "A", "C#", "E", "B"],
+    ];
+
+    this.selectedChordTemplate =
+      this.chordTemplates[
+        Math.floor(Math.random() * this.chordTemplates.length)
+      ];
+    this.currentNoteIndex = 0;
+
     this.notes = [
       "C1",
       "F1",
@@ -56,6 +101,8 @@ export default class Circle {
     ];
     this.compressor = compressor;
     this.masterVolume = masterVolume;
+
+    this.lineWidth = 1;
 
     this.setup();
   }
@@ -108,6 +155,9 @@ export default class Circle {
           0,
           Math.PI * 2
         );
+
+        this.lineWidth = this.lineWidth - 0.02;
+        this.ctx.lineWidth = this.lineWidth;
 
         this.strokeGradient = this.ctx.createLinearGradient(
           0,
@@ -266,37 +316,46 @@ export default class Circle {
   }
 
   playSound(sampler, duration) {
-    if (!sampler || !sampler.loaded) {
+    if (!sampler || !sampler.loaded || this.isExploding) {
       console.warn("Sampler non prêt !");
       return;
     }
 
-    const baseNotes = ["D", "F", "A", "C", "F"];
-    const octaves = [1, 2, 3];
-    const extendedNotes = [];
-    octaves.forEach((oct) => {
-      baseNotes.forEach((n) => extendedNotes.push(`${n}${oct}`));
-    });
-
     const minRadius = 2;
     const maxRadius = 200;
+
+    // Normalisation de radius pour définir l’octave
     const clampedRadius = Math.max(minRadius, Math.min(this.radius, maxRadius));
-    const normalizedRadius =
-      (clampedRadius - minRadius) / (maxRadius - minRadius);
-    const curvedRadius = Math.sqrt(normalizedRadius); // courbe plus douce
-    const noteIndex = Math.floor(curvedRadius * (extendedNotes.length - 1));
+    const normalized = (clampedRadius - minRadius) / (maxRadius - minRadius);
 
-    const note = extendedNotes[noteIndex];
+    // Inversion : plus grand = plus grave
+    const baseOctave = 0;
+    const maxOctave = 3;
+    const dynamicOctave = Math.floor(
+      baseOctave + (1 - normalized) * (maxOctave - baseOctave)
+    );
 
-    // -- Gestion des voix actives --
+    // Construit la note à jouer
+    const baseNote = this.selectedChordTemplate[this.currentNoteIndex];
+    const note = `${baseNote}${dynamicOctave}`;
+
+    if (this.currentNoteIndex >= this.selectedChordTemplate.length) {
+      this.currentNoteIndex = 0;
+      this.selectedChord =
+        this.chords[Math.floor(Math.random() * this.chords.length)];
+    }
+
     this.activeVoices = (this.activeVoices || 0) + 1;
-
     // Volume global basé sur le nombre de voix (logarithmique)
     const targetVolumeDb = Tone.gainToDb(1 / this.activeVoices);
     this.masterVolume.volume.rampTo(targetVolumeDb, 0.05); // transition douce
 
     // Déclenchement
-    sampler.triggerAttackRelease(note, duration, Tone.now());
+    if (this.radius > 80) {
+      this.bassSampler.triggerAttackRelease(note, duration, Tone.now());
+    } else {
+      sampler.triggerAttackRelease(note, duration, Tone.now());
+    }
 
     // Décrément après la note
     setTimeout(() => {

@@ -39,16 +39,21 @@ height: 10px;
 margin: 0;
 margin-right: 20px;
 font-size: 10pt;
+
+user-select: none;
+cursor: col-resize;
 }
 
 .gradient{
   z-index: -2;
-  position: absolute;
-  top:20px;
-  left: 20px;
-  width: calc(100vw - 40px);
-  height: calc(100vh - 40px);
-
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: calc(100vw - 40px);
+    height: calc(100vh - 40px);
+    filter: saturate(1.1) brightness(1.1);
+    transition: background 0.5s linear;
+/* 
   background: linear-gradient(to bottom,
         #121222 0%,
         #0E2634 20%,
@@ -98,8 +103,7 @@ font-size: 10pt;
         #000000 96%,
         #28120A 97%,
         #000000 98%,
-        #000000 100%);
-    filter: saturate(1.2) brightness(1.2);
+        #000000 100%); */
 }
 
 .dg{
