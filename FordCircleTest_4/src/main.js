@@ -37,6 +37,8 @@ let collisionLines = [];
 let showHandle = false;
 let baseRadius = 300;
 
+let GradientRatio;
+
 let collisionLinesAmount = 0;
 const ambiantChordsByPitch = [
   ["C2", "E2", "G2"], // très grave (nuit)
@@ -93,10 +95,10 @@ let bassSampler;
 window.addEventListener("DOMContentLoaded", async () => {
   sampler = new Tone.Sampler({
     urls: {
-      C1: "C1.mp3",
-      F1: "F1.mp3",
-      A1: "A1.mp3",
-      C2: "C2.mp3",
+      C1: "Calming_C1.mp3",
+      E1: "Calming_E1.mp3",
+      G1: "Calming_G1.mp3",
+      B1: "Calming_B1.mp3",
     },
     baseUrl: "Sounds/",
     onload: () => console.log("Samples chargés 🎧"),
@@ -115,7 +117,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     onload: () => console.log("Samples chargés 🎧"),
   }).connect(reverb);
 
-  sampler2.volume.value = -24;
+  sampler2.volume.value = -28;
 
   ambiantSampler = new Tone.Sampler({
     urls: {
@@ -131,7 +133,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     },
   }).connect(reverb);
 
-  ambiantSampler.volume.value = -50;
+  ambiantSampler.volume.value = -70;
 
   effectSampler = new Tone.Sampler({
     urls: {
@@ -149,10 +151,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   bassSampler = new Tone.Sampler({
     urls: {
-      C1: "Bass4_C1.mp3",
-      E1: "Bass4_E1.mp3",
-      G1: "Bass4_G1.mp3",
-      C2: "Bass4_C2.mp3",
+      C1: "C1.mp3",
+      F1: "F1.mp3",
+      A1: "A1.mp3",
+      C2: "C2.mp3",
     },
     baseUrl: "Sounds/",
     onload: () => {
@@ -160,7 +162,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     },
   }).connect(reverb);
 
-  bassSampler.volume.value = -16;
+  bassSampler.volume.value = -24;
 });
 
 //------------GlobalForces---------------------------
@@ -331,7 +333,8 @@ function fordCircles(limit) {
           compressor,
           masterVolume,
           sampler2,
-          bassSampler
+          bassSampler,
+          GradientRatio
         );
 
         circles.push(newCircle);
@@ -512,6 +515,9 @@ function draw() {
   const currentTime = performance.now();
   const deltaTime = (currentTime - lastTime) / 1000; // Temps écoulé en secondes
   lastTime = currentTime;
+
+  let GradientRatio = gradient.ratio; // Récupère le ratio de la gradient
+  console.log("Gradient Ratio:", GradientRatio);
 
   //updateVariables
   gravityForce.x = params.gravityX;

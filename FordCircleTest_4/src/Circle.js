@@ -12,7 +12,8 @@ export default class Circle {
     compressor,
     masterVolume,
     sampler2,
-    bassSampler
+    bassSampler,
+    GradientRatio
   ) {
     this.ctx = ctx;
     this.posX = x;
@@ -34,6 +35,8 @@ export default class Circle {
     this.sampler = sampler;
     this.sampler2 = sampler2;
     this.bassSampler = bassSampler;
+
+    this.GradientRatio = GradientRatio;
 
     this.strokeColor = ["#000000"];
     this.colors = [
@@ -329,7 +332,7 @@ export default class Circle {
     const normalized = (clampedRadius - minRadius) / (maxRadius - minRadius);
 
     // Inversion : plus grand = plus grave
-    const baseOctave = 0;
+    const baseOctave = 1;
     const maxOctave = 3;
     const dynamicOctave = Math.floor(
       baseOctave + (1 - normalized) * (maxOctave - baseOctave)
@@ -351,7 +354,7 @@ export default class Circle {
     this.masterVolume.volume.rampTo(targetVolumeDb, 0.05); // transition douce
 
     // Déclenchement
-    if (this.radius > 80) {
+    if (this.radius > 60) {
       this.bassSampler.triggerAttackRelease(note, duration, Tone.now());
     } else {
       sampler.triggerAttackRelease(note, duration, Tone.now());

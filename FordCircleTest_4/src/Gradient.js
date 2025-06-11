@@ -1,40 +1,40 @@
 export default class Gradient {
   constructor() {
     this.gradientStops = [
-      { pos: 0, night: "#121222", day: "#FDFEFD" },
-      { pos: 32, night: "#0E2634", day: "#FFFFFF" },
-      { pos: 35, night: "#14313F", day: "#EDFBFF" },
-      { pos: 38, night: "#183845", day: "#D8F5FD" },
-      { pos: 49, night: "#445561", day: "#DCFBFF" },
-      { pos: 55, night: "#8B7D7D", day: "#5DDAF5" },
-      { pos: 60, night: "#AC967F", day: "#3D5C70" },
-      { pos: 64, night: "#FFD786", day: "#C0A1A6" },
-      { pos: 65, night: "#FF6536", day: "#F7F0AB" },
-      { pos: 67, night: "#121222", day: "#F4B04D" },
-      { pos: 68, night: "#08080F", day: "#FEF2BD" },
-      { pos: 70, night: "#211C22", day: "#FFD85F" },
-      { pos: 71, night: "#4E2827", day: "#FFEEB6" },
-      { pos: 72, night: "#FF322C", day: "#98673E" },
-      { pos: 73, night: "#FFF7D3", day: "#362930" },
-      { pos: 74, night: "#FFF7D3", day: "#141726" },
-      { pos: 75, night: "#FFD395", day: "#F8C15D" },
-      { pos: 76, night: "#FF7C00", day: "#DC6120" },
-      { pos: 77, night: "#FC8310", day: "#FFE685" },
-      { pos: 78, night: "#744746", day: "#111521" },
-      { pos: 80, night: "#4E2827", day: "#121929" },
-      { pos: 81, night: "#211C22", day: "#161A26" },
-      { pos: 82, night: "#000000", day: "#12121B" },
-      { pos: 83, night: "#211C22", day: "#121826" },
-      { pos: 84, night: "#000000", day: "#37110E" },
-      { pos: 85, night: "#4E2827", day: "#F88B12" },
-      { pos: 86, night: "#000000", day: "#EC651F" },
-      { pos: 87, night: "#4E2827", day: "#702819" },
-      { pos: 89, night: "#FF322C", day: "#AB3F18" },
-      { pos: 90, night: "#FF9000", day: "#9C3715" },
-      { pos: 91, night: "#28120A", day: "#FF951C" },
-      { pos: 93, night: "#28120A", day: "#101825" },
-      { pos: 96, night: "#000000", day: "#111216" },
-      { pos: 98, night: "#000000", day: "#161A26" },
+      { pos: 0, night: "#121222", day: "#0A0A0C" },
+      { pos: 32, night: "#0E2634", day: "#0F0F19" },
+      { pos: 35, night: "#14313F", day: "#101125" },
+      { pos: 38, night: "#183845", day: "#101125" },
+      { pos: 49, night: "#445561", day: "#101125" },
+      { pos: 55, night: "#8B7D7D", day: "#191A2F" },
+      { pos: 60, night: "#AC967F", day: "#55567B" },
+      { pos: 64, night: "#F2D38D", day: "#F4ADCB" },
+      { pos: 65, night: "#FB950B", day: "#B495CC" },
+      { pos: 67, night: "#121222", day: "#121222" },
+      { pos: 68, night: "#08080F", day: "#08080F" },
+      { pos: 70, night: "#211C22", day: "#211C22" },
+      { pos: 71, night: "#A42A0A", day: "#0E315B" },
+      { pos: 72, night: "#F74006", day: "#095EBF" },
+      { pos: 73, night: "#FFF7D3", day: "#FFBB85" },
+      { pos: 74, night: "#FFF7D3", day: "#FFBB85" },
+      { pos: 75, night: "#F2D38D", day: "#F4ADCB" },
+      { pos: 76, night: "#FB950B", day: "#B495CC" },
+      { pos: 77, night: "#FB950B", day: "#B495CC" },
+      { pos: 78, night: "#744746", day: "#744746" },
+      { pos: 80, night: "#A42A0A", day: "#0E315B" },
+      { pos: 81, night: "#211C22", day: "#211C22" },
+      { pos: 82, night: "#000000", day: "#000000" },
+      { pos: 83, night: "#211C22", day: "#211C22" },
+      { pos: 84, night: "#000000", day: "#000000" },
+      { pos: 85, night: "#A42A0A", day: "#0E315B" },
+      { pos: 86, night: "#000000", day: "#000000" },
+      { pos: 87, night: "#A42A0A", day: "#0E315B" },
+      { pos: 89, night: "#F74006", day: "#095EBF" },
+      { pos: 90, night: "#FB950B", day: "#B495CC" },
+      { pos: 91, night: "#28120A", day: "#28120A" },
+      { pos: 93, night: "#28120A", day: "#28120A" },
+      { pos: 96, night: "#000000", day: "#000000" },
+      { pos: 98, night: "#000000", day: "#000000" },
       { pos: 100, night: "#000000", day: "#000000" },
     ];
 
@@ -46,14 +46,25 @@ export default class Gradient {
     this.lastUpdate = 0;
     this.frameInterval = 1000 / 30; // ~30 FPS
     this.t = 0;
+    this.hourElement = document.querySelector(".heure");
 
     this.ratio = 0;
   }
 
   getDayNightRatio() {
     const now = performance.now();
-    const baseTime = (now / 60000) * 2 * Math.PI; // base oscillation
+    const baseTime = (now / 60000) * 2 * Math.PI; // Vitesse du cycle jour/nuit
     return 0.5 + 0.5 * Math.sin(baseTime + this.manualTimeOffset);
+  }
+
+  getHourFromRatio() {
+    let hour = (12 + this.ratio * 12) % 24;
+    let minutes = Math.round((hour % 1) * 60);
+    hour = Math.floor(hour);
+    // Format HH:MM
+    return `${hour.toString().padStart(2, "0")}h${minutes
+      .toString()
+      .padStart(2, "0")}`;
   }
 
   updateGradient(timestamp = performance.now()) {
@@ -62,9 +73,9 @@ export default class Gradient {
       return;
     }
     this.lastUpdate = timestamp;
-    const ratio = this.getDayNightRatio(timestamp); // passe le temps
+    const ratio = this.getDayNightRatio(timestamp);
     this.ratio = ratio;
-    const time = performance.now() / 10000; //
+    const time = performance.now() / 10000;
     const gradient = this.gradientStops
       .map((stop, i) => {
         const pos = this.getWavyPosition(stop.pos, i, time);
@@ -130,7 +141,6 @@ export default class Gradient {
       this.lastCursorX = null;
     });
   }
-
   updateManualRatio(e, element) {
     const rect = element.getBoundingClientRect();
     const dx = e.clientX - (rect.left + rect.width / 2);
